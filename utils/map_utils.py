@@ -47,25 +47,63 @@ def create_legend(fig, colors):
     return fig
 
 def generate_bivariate_map(gdf, biv_bins_col, color_discrete, colors_scheme, custom_data_hover, map_title, map_subtitle, geojson):
-    # Create a choropleth map with the necessary data
+    """Function to create map
+    Arguments:
+        gdf (GeoPandas DataFrame): Geospatial data, index as location and geometry col with polygon data
+        biv_bins_col (list: str): color scheme to use in the bivariate map, list length of 9
+        color_discrete (list: str): Dictionary mapping bivariate bin values to colors.
+        colors_scheme (list) : color scheme to use in bivariate map
+        custom_data_hover (list: str): data to be used in hover, ex. ["Zipcode", "Client_Count", "Age", "VL"]
+        map_title (string): title for map
+        map_subtitle (string): subtitle for map
+    Returns:
+        Plotly Figure Object
+    """
     fig = px.choropleth(
         gdf,
         geojson=geojson,
-        locations='Region',  # The column in the dataframe to link to geojson
+        locations='Region',
+        featureidkey='properties.REGION',
         color=biv_bins_col,
+        height=900,
         color_discrete_map=color_discrete,
-        hover_data=custom_data_hover
+        custom_data=custom_data_hover
+    ).update_layout(
+        paper_bgcolor='#fff9ed',
+        plot_bgcolor='#fff9ed',
+        geo=dict(
+            bgcolor='#fff9ed',
+            fitbounds="locations",
+            visible=True  # make the base map invisible so it looks cleaner
+        ),
+        showlegend=False,
+        title_x=0.05,
+        title=dict(
+            text=map_title,
+            font=dict(size=24)
+        ),
+        margin={"r":0, "t":85, "l":0, "b":0},
+        map_style="carto-darkmatter",
+        autosize=True,
+        newshape_line_color="yellow",
+        modebar_add=["drawline", "drawopenpath", "drawclosedpath", "drawcircle", "drawrect", "eraseshape"],
+        modebar={"orientation":"h", "bgcolor":"white", "color":"black", "activecolor":"#9ed3cd"}
+    ).update_traces(
+        marker_line_width=0.5,  # width of the geo entity borders
+        marker_line_color="#d1d1d1",  # color of the geo entity borders
+        showscale=False  # hide the colorscale
     )
 
-    fig.update_geos(fitbounds="locations", visible=False)
-    fig.update_layout(
-        title=dict(text=map_title, x=0.5),
-        geo=dict(showcoastlines=True, coastlinecolor="Black"),
-        annotations=[dict(
-            x=0.5, y=-0.1, xref="paper", yref="paper", text=map_subtitle,
-            showarrow=False, font=dict(size=14)
-        )],
-        coloraxis_showscale=False
+    fig.update_traces(
+        hovertemplate=(
+            "<b>%{customdata[0]}</b><br>" +
+            "Mean Household Income: ₱%{customdata[1]:,.2f}<br>" +
+            "Education Level: %{customdata[2]}<br>" +
+            "Unemployment Rate: %{customdata[3]:.1f}%<extra></extra>"
+        )
     )
+
+    # Add the bivariate legend
+    fig = create_legend(fig, list(colors_scheme.values()))
 
     return fig

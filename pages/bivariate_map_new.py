@@ -7,21 +7,33 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# dash.register_page(__name__, path="/bivariate")
+dash.register_page(__name__, path="/bivariate")
 
 # Define the bivariate color bins map - using the notebook implementation
 biv_bins_map = {
-    "A3": "rgba(31,122,140,1)",  # #1f7a8c
-    "B3": "rgba(27,73,101,1)",   # #1b4965
-    "C3": "rgba(2,43,58,1)",     # #022b3a
-    "A2": "rgba(112,162,136,1)", # #70a288
-    "B2": "rgba(52,160,164,1)",  # #34a0a4
-    "C2": "rgba(82,182,154,1)",  # #52b69a
-    "A1": "rgba(190,233,232,1)", # #bee9e8
-    "B1": "rgba(181,228,140,1)", # #b5e48c
-    "C1": "rgba(95,168,211,1)",  # #5fa8d3
-    "ZZ": "rgba(253,240,213,1)"  # #fdf0d5
+    "A1": "#e2f2e3",  # (Light Green + Light Blue)
+    "A2": "#c1e0da",
+    "A3": "#9ec9dd",
+    "B1": "#bad3af",
+    "B2": "#a9d1b8",
+    "B3": "#69adaf",
+    "C1": "#88c685",
+    "C2": "#6fb998",
+    "C3": "#4c9e8b",
+    "ZZ": "#fdf0d5"   # No-data or fallback
 }
+colors = [
+    "#e2f2e3",  # A1 (lowest Edu, lowest Income)
+    "#c1e0da",  # A2 (lowest Edu, medium Income)
+    "#9ec9dd",  # A3 (lowest Edu, highest Income)
+    "#bad3af",  # B1 (medium Edu, lowest Income)
+    "#a9d1b8",  # B2 (medium Edu, medium Income)
+    "#69adaf",  # B3 (medium Edu, highest Income)
+    "#88c685",  # C1 (highest Edu, lowest Income)
+    "#6fb998",  # C2 (highest Edu, medium Income)
+    "#4c9e8b"   # C3 (highest Edu, highest Income)
+]
+
 
 # Load data
 df_income_expenditure = pd.read_csv('Family Income and Expenditure.csv')
@@ -156,12 +168,16 @@ def create_bivariate_bins(df):
         axis=1
     )
 
-    # Convert numeric code to bivariate bin labels
+    
+    # Convert the integer code to the bivariate keys (e.g. "A1", "A2", ... "C3")
+    #    The order depends on how your function increments 'count'.
+    #    For example, if 'count' increments row-wise:
+    #    0 -> A1, 1 -> A2, 2 -> A3, 3 -> B1, 4 -> B2, etc.
     numeric_to_bin = {
         0: "A1", 1: "A2", 2: "A3",
         3: "B1", 4: "B2", 5: "B3",
         6: "C1", 7: "C2", 8: "C3",
-        -1: "ZZ"  # For invalid values
+        -1: "ZZ"  # If your function returns -1 for invalid
     }
 
     df["Bivariate Bin"] = df["Bivariate Numeric Code"].map(numeric_to_bin)
@@ -227,7 +243,7 @@ def create_legend(fig, colors):
         showarrow=False,
         text="Household Income" + ' →',
         font=dict(
-            color='#000',
+            color='#fff',
             size=12
         ),
         borderpad=1,
@@ -244,7 +260,7 @@ def create_legend(fig, colors):
         showarrow=False,
         text="Education Level" + ' →',
         font=dict(
-            color='#000',
+            color='#fff',
             size=12,
         ),
         textangle=270,
@@ -265,10 +281,10 @@ def generate_bivariate_map(gdf, biv_bins_col, color_discrete, colors_scheme, cus
         color_discrete_map=color_discrete,
         custom_data=custom_data_hover,
     ).update_layout(
-        paper_bgcolor='#fff9ed',
-        plot_bgcolor='#fff9ed',
+        paper_bgcolor='#2e2e2e',
+        plot_bgcolor='#2e2e2e',
         geo=dict(
-            bgcolor='#fff9ed',
+            bgcolor='#2e2e2e',
             fitbounds="locations",
             visible=False  # make the base map invisible so it looks cleaner
         ),
@@ -277,8 +293,13 @@ def generate_bivariate_map(gdf, biv_bins_col, color_discrete, colors_scheme, cus
         title=dict(
             text=map_title,
             font=dict(
-                size=24
+                size=24,
+                color="white"
             ),
+        ),
+        title_subtitle=dict(
+            text=map_subtitle,
+            font=dict(size=16, color="white")
         ),
         margin={"r":0, "t":85, "l":0, "b":0},
         map_style="carto-darkmatter",
@@ -337,7 +358,7 @@ df_final_cleaned['Region'] = df_final_cleaned['Region'].map(geojson_region_mappi
 layout = html.Div(
     style={"backgroundColor": "#1E1E1E", "fontFamily": "Arial", "color": "white", "padding": "20px"},
     children=[
-        html.H1("Bivariate Choropleth Map Dashboard", style={
+        html.H1("Bivariate Choropleth Map", style={
             "textAlign": "center", 
             "fontFamily": "Segoe UI, Arial, sans-serif", 
             "marginTop": "50px", 
@@ -352,7 +373,7 @@ layout = html.Div(
                 "color": "white"
             }),
             dcc.Checklist(
-                id="region-checklist",
+                id="region-checklist-test",
                 options=[{"label": region, "value": region} for region in df_final_cleaned["Region"].unique()],
                 value=df_final_cleaned["Region"].unique().tolist(),
                 style={
@@ -367,13 +388,13 @@ layout = html.Div(
 
         html.Div([
             dcc.Loading(
-                id="loading-bivariate-map",
+                id="loading-bivariate-map-test",
                 type="default",
                 color="#00b4d8",
                 children=[
-                    dcc.Graph(id="bivariate-map-chart", style={
+                    dcc.Graph(id="bivariate-map-test-chart", style={
                         "width": "100%", 
-                        "height": "600px",
+                        "height": "300px",
                         "backgroundColor": "#333333"  # Dark background for the graph area
                     }),
                 ]
@@ -384,8 +405,8 @@ layout = html.Div(
 
 # Callback
 @dash.callback(
-    Output("bivariate-map-chart", "figure"),
-    Input("region-checklist", "value"),
+    Output("bivariate-map-test-chart", "figure"),
+    Input("region-checklist-test", "value"),
     prevent_initial_call=False
 )
 def update_bivariate_map(selected_regions):
@@ -414,7 +435,7 @@ def update_bivariate_map(selected_regions):
             gdf=df_filtered,
             biv_bins_col="Bivariate Bin",
             color_discrete=biv_bins_map,
-            colors_scheme=list(biv_bins_map.values()),
+            colors_scheme=colors,
             custom_data_hover=custom_data_hover,
             map_title=map_title,
             map_subtitle=map_subtitle

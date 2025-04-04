@@ -1,0 +1,10 @@
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+
+
+# ignore csvs and jsons - dataset files, download them through Google Drive instead, provided in README.md
+
+*.csv
+*.json
+*.ipynb
