@@ -26,7 +26,7 @@ The project was driven by pressing economic concerns such as:
 
 ## 📦 Setup Instructions
 1. Clone the Project Repository
-- git clone 
+- git clone https://github.com/Nina-Sorongon/EconoMap-FIES-LFS-Analytics.git
 
 2. Run the Package Locally:
 - Open the downloaded package using a Jupyter notebook environment such as Google Colab, VSCode, or Jupyter Notebook locally installed on your machine.
