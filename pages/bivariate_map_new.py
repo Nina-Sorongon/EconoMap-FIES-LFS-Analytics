@@ -423,28 +423,36 @@ layout = html.Div(
 @dash.callback(
     Output("bivariate-map-test-chart", "figure"),
     Output("bivariate-income-expenditure-chart", "figure"),
-    Output("region-checklist-test", "value"),
-    Input("bivariate-map-test-chart", "selectedData"),
+    # Output("region-checklist-test", "value"),
+    # Input("bivariate-map-test-chart", "selectedData"),
     Input("region-checklist-test", "value"),
+    prevent_initial_call=False
 )
-def update_bivariate_map(selected_data, selected_regions):
-    print("Selected Data:", selected_data)
-    print("Selected Regions:", selected_regions)
+def update_bivariate_map(selected_regions):
+    # print("Selected Data:", selected_data)
+    # print("Selected Regions:", selected_regions)
 
-    # Safely extract regions clicked on the map
-    clicked_regions = set()
-    if selected_data and isinstance(selected_data, dict) and "points" in selected_data:
-        clicked_regions = {point["customdata"][0] for point in selected_data["points"]}
+    # # Safely extract regions clicked on the map
+    # clicked_regions = set()
+    # if selected_data and isinstance(selected_data, dict) and "points" in selected_data:
+    #     clicked_regions = {point["customdata"][0] for point in selected_data["points"]}
 
-    # Use clicked regions if any, else fall back to checklist
-    final_selected_regions = list(clicked_regions) if clicked_regions else selected_regions
+    # # Use clicked regions if any, else fall back to checklist
+    # final_selected_regions = list(clicked_regions) if clicked_regions else selected_regions
 
-    # If still nothing selected, prevent update or use all as fallback
-    if not final_selected_regions:
+    # # If still nothing selected, prevent update or use all as fallback
+    # if not final_selected_regions:
+    #     raise PreventUpdate
+
+    # # Filter data
+    # df_filtered = df_final_cleaned[df_final_cleaned["Region"].isin(final_selected_regions)].copy()
+
+     # Ensure we have valid input
+    if not selected_regions or len(selected_regions) == 0:
         raise PreventUpdate
-
-    # Filter data
-    df_filtered = df_final_cleaned[df_final_cleaned["Region"].isin(final_selected_regions)].copy()
+        
+    # Filter data based on selected regions
+    df_filtered = df_final_cleaned[df_final_cleaned["Region"].isin(selected_regions)]
 
     if df_filtered.empty:
         raise PreventUpdate
@@ -473,9 +481,9 @@ def update_bivariate_map(selected_data, selected_regions):
         geo=dict(bgcolor="rgba(0,0,0,0)"),
     )
 
-    fig.update_traces(
-        customdata=df_filtered[["Region", "Mean Household Income", "Most Common HH Head Education"]].values.tolist(),
-    )
+    # fig.update_traces(
+    #     customdata=df_filtered[["Region", "Mean Household Income", "Most Common HH Head Education"]].values.tolist(),
+    # )
 
     # Grouped bar chart
     fig_bar = go.Figure()
@@ -512,4 +520,5 @@ def update_bivariate_map(selected_data, selected_regions):
     fig_bar.update_yaxes(range=[0, max_val * 1.1])
     fig.update_geos(fitbounds="locations", visible=False)
 
-    return fig, fig_bar, final_selected_regions
+    return fig, fig_bar#, selected_regions
+
