@@ -386,7 +386,8 @@ layout = html.Div(
             ),
         ], style={"marginBottom": "30px"}),
 
-        html.Div([
+        # Choropleth Map
+        html.Div([  
             dcc.Loading(
                 id="loading-bivariate-map-test",
                 type="default",
@@ -394,7 +395,23 @@ layout = html.Div(
                 children=[
                     dcc.Graph(id="bivariate-map-test-chart", style={
                         "width": "100%", 
-                        "height": "300px",
+                        "height": "600px",  # Set a fixed height for the map
+                        "backgroundColor": "#333333"  # Dark background for the graph area
+                    }),
+                ]
+            ),
+        ], style={"marginBottom": "50px"}),  # Add margin-bottom to create space between map and chart
+
+        # Grouped Bar Chart
+        html.Div([  
+            dcc.Loading(
+                id="loading-income-expenditure-chart",
+                type="default",
+                color="#00b4d8",
+                children=[
+                    dcc.Graph(id="bivariate-income-expenditure-chart", style={
+                        "width": "100%", 
+                        "height": "400px",  # Set a fixed height for the bar chart
                         "backgroundColor": "#333333"  # Dark background for the graph area
                     }),
                 ]
@@ -403,24 +420,35 @@ layout = html.Div(
     ]
 )
 
-# Callback
 @dash.callback(
     Output("bivariate-map-test-chart", "figure"),
+    Output("bivariate-income-expenditure-chart", "figure"),
+    Output("region-checklist-test", "value"),
+    Input("bivariate-map-test-chart", "selectedData"),
     Input("region-checklist-test", "value"),
-    prevent_initial_call=False
 )
-def update_bivariate_map(selected_regions):
-    # Ensure we have valid input
-    if not selected_regions or len(selected_regions) == 0:
+def update_bivariate_map(selected_data, selected_regions):
+    print("Selected Data:", selected_data)
+    print("Selected Regions:", selected_regions)
+
+    # Safely extract regions clicked on the map
+    clicked_regions = set()
+    if selected_data and isinstance(selected_data, dict) and "points" in selected_data:
+        clicked_regions = {point["customdata"][0] for point in selected_data["points"]}
+
+    # Use clicked regions if any, else fall back to checklist
+    final_selected_regions = list(clicked_regions) if clicked_regions else selected_regions
+
+    # If still nothing selected, prevent update or use all as fallback
+    if not final_selected_regions:
         raise PreventUpdate
-        
-    # Filter data based on selected regions
-    df_filtered = df_final_cleaned[df_final_cleaned["Region"].isin(selected_regions)]
-    
+
+    # Filter data
+    df_filtered = df_final_cleaned[df_final_cleaned["Region"].isin(final_selected_regions)].copy()
+
     if df_filtered.empty:
         raise PreventUpdate
 
-    # Define hover data and titles
     custom_data_hover = [
         "Region",
         "Mean Household Income",
@@ -429,9 +457,8 @@ def update_bivariate_map(selected_regions):
     map_title = "Regional Relationship Between Education and Income in the Philippines"
     map_subtitle = "Most Common Education Level vs. Average Household Income"
 
-    # Generate Map
-    try:
-        fig = generate_bivariate_map(
+    # Map configuration
+    fig = generate_bivariate_map(
             gdf=df_filtered,
             biv_bins_col="Bivariate Bin",
             color_discrete=biv_bins_map,
@@ -440,10 +467,49 @@ def update_bivariate_map(selected_regions):
             map_title=map_title,
             map_subtitle=map_subtitle
         )
-        
-        # Force the figure to render properly
-        fig.update_geos(fitbounds="locations", visible=False)
-        return fig
-    except Exception as e:
-        print(f"Error generating bivariate map: {e}")
-        raise PreventUpdate
+
+    fig.update_layout(
+        autosize=True,
+        geo=dict(bgcolor="rgba(0,0,0,0)"),
+    )
+
+    fig.update_traces(
+        customdata=df_filtered[["Region", "Mean Household Income", "Most Common HH Head Education"]].values.tolist(),
+    )
+
+    # Grouped bar chart
+    fig_bar = go.Figure()
+
+    fig_bar.add_trace(go.Bar(
+        x=df_filtered["Region"],
+        y=df_filtered["Mean Household Income"],
+        name="Average Income",
+        hovertemplate="Region: %{x}<br>Income: %{y}<extra></extra>",
+        marker_color="#64dfdf"
+    ))
+
+    fig_bar.add_trace(go.Bar(
+        x=df_filtered["Region"],
+        y=df_filtered["Mean Household Expenditure"],
+        name="Average Expenditure",
+        hovertemplate="Region: %{x}<br>Expenditure: %{y}<extra></extra>",
+        marker_color="#80ffdb"
+    ))
+
+    fig_bar.update_layout(
+        barmode="group",
+        title="Average Family Income vs. Expenditure",
+        xaxis_title="Region",
+        yaxis_title="PHP",
+        hovermode="x unified",
+        font=dict(family="Arial"),
+        plot_bgcolor="#2e2e2e",  # Black background
+        paper_bgcolor="#2e2e2e",  # Paper background black
+        font_color="white"  # Text color white for contrast
+    )
+
+    max_val = max(df_filtered["Mean Household Income"].max(), df_filtered["Mean Household Expenditure"].max())
+    fig_bar.update_yaxes(range=[0, max_val * 1.1])
+    fig.update_geos(fitbounds="locations", visible=False)
+
+    return fig, fig_bar, final_selected_regions
