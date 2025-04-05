@@ -9,30 +9,32 @@ import plotly.graph_objects as go
 
 dash.register_page(__name__, path="/bivariate")
 
-# Define the bivariate color bins map - using the notebook implementation
 biv_bins_map = {
-    "A1": "#e2f2e3",  # (Light Green + Light Blue)
-    "A2": "#c1e0da",
-    "A3": "#9ec9dd",
-    "B1": "#bad3af",
-    "B2": "#a9d1b8",
-    "B3": "#69adaf",
-    "C1": "#88c685",
-    "C2": "#6fb998",
-    "C3": "#4c9e8b",
-    "ZZ": "#fdf0d5"   # No-data or fallback
+    "A1": "#e0f3e9",  # Low Edu, Low Income
+    "A2": "#71b5d0",
+    "A3": "#0177b6",  # Low Edu, High Income (pure blue)
+    "B1": "#8cd174",
+    "B2": "#4eab7f",
+    "B3": "#0f8589",
+    "C1": "#38af00",  # High Edu, Low Income (pure green)
+    "C2": "#2ba12e",
+    "C3": "#1d935b",  # High Edu, High Income (deep teal)
+    "ZZ": "#fdf0d5"   # Fallback / No data
 }
+
 colors = [
-    "#e2f2e3",  # A1 (lowest Edu, lowest Income)
-    "#c1e0da",  # A2 (lowest Edu, medium Income)
-    "#9ec9dd",  # A3 (lowest Edu, highest Income)
-    "#bad3af",  # B1 (medium Edu, lowest Income)
-    "#a9d1b8",  # B2 (medium Edu, medium Income)
-    "#69adaf",  # B3 (medium Edu, highest Income)
-    "#88c685",  # C1 (highest Edu, lowest Income)
-    "#6fb998",  # C2 (highest Edu, medium Income)
-    "#4c9e8b"   # C3 (highest Edu, highest Income)
+    "#e0f3e9",  # A1
+    "#71b5d0",  # A2
+    "#0177b6",  # A3
+    "#8cd174",  # B1
+    "#4eab7f",  # B2
+    "#0f8589",  # B3
+    "#38af00",  # C1
+    "#2ba12e",  # C2
+    "#1d935b"   # C3
 ]
+
+
 
 
 # Load data
